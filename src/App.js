@@ -14,10 +14,10 @@ import {
 import { useEffect, useState } from 'react'
 import { connect } from 'get-starknet'
 import { Contract } from 'starknet'
-import { toFelt, toHex, hexToDecimalString } from 'starknet/dist/utils/number'
+import { toHex, hexToDecimalString } from 'starknet/dist/utils/number'
 import { BigNumber } from 'ethers'
 
-import { addressTruncator, feltToString, stringToFelt } from './utils'
+import { addressTruncator } from './utils'
 import tokenABI from './tokenABI.json'
 
 const ABI = tokenABI
@@ -34,14 +34,15 @@ function App() {
   const [balance, setBalance] = useState(0)
   const [contract, setContract] = useState('')
   const [account, setAccount] = useState('')
-  const [trimmedAccount, setTrimmedAccount] = useState('')
-  const [provider, setProvider] = useState('')
+  const [address, setAddress] = useState('')
+  const [trimmedAddress, setTrimmedAddress] = useState('')
+  // const [provider, setProvider] = useState('')
   const [connected, setConnected] = useState(false)
 
   useEffect(() => {
     const updateTokenInfo = async () => {
       if (contract !== '') {
-        const balance = await getTokenBalance(account)
+        const balance = await getTokenBalance(address)
         setBalance(balance)
       }
     }
@@ -49,11 +50,11 @@ function App() {
   }, [contract, account])
 
   useEffect(() => {
-    if (provider !== '') {
-      const contract = new Contract(ABI, CONTRACT_ADDRESS, provider)
+    if (account !== '') {
+      const contract = new Contract(ABI, CONTRACT_ADDRESS, account)
       setContract(contract)
     }
-  }, [provider])
+  }, [account])
 
   useEffect(() => {
     if (
@@ -89,16 +90,19 @@ function App() {
       const starknet = await connect()
       if (!starknet.isConnected) {
         await starknet.enable({ starknetVersion: 'v4' })
-        setAccount(starknet.account.address)
+        setAccount(starknet.account)
+        setAddress(starknet.account.address)
         setConnected(true)
-        const address = addressTruncator(starknet.account.address)
-        setTrimmedAccount(address)
-        setProvider(starknet.account.provider)
+        const truncatedAddress = addressTruncator(starknet.account.address)
+        setTrimmedAddress(truncatedAddress)
+        // setProvider(starknet.account.provider)
       } else {
+        setAccount(starknet.account)
+        setAddress(starknet.account.address)
         setConnected(true)
-        const address = addressTruncator(starknet.account.address)
-        setAccount(address)
-        setProvider(starknet.account.provider)
+        const truncatedAddress = addressTruncator(starknet.account.address)
+        setTrimmedAddress(truncatedAddress)
+        // setProvider(starknet.account.provider)
       }
     } catch (err) {
       alert(err.message)
@@ -107,7 +111,6 @@ function App() {
 
   const handleReceiverAddress = (event) => {
     const address = event.target.value
-    console.log(address)
     if (address.length === 66) {
       setReceiverAddress(address)
     } else {
@@ -162,7 +165,7 @@ function App() {
             <Button padding={5} marginTop="6" float="right">
               <Text as="b">Streamy Token:</Text>
               <Text>{balance} </Text>
-              <Text>---{trimmedAccount}</Text>
+              <Text>---{trimmedAddress}</Text>
             </Button>
           )}
         </Box>
@@ -186,7 +189,7 @@ function App() {
           <FormControl isRequired>
             <NumberInput
               min={0}
-              max={9007199254740991}
+              max={balance}
               margin="3"
               onChange={handleAmountPerSecond}
             >
