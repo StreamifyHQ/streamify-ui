@@ -19,11 +19,16 @@ import { BigNumber } from 'ethers'
 
 import { addressTruncator } from './utils'
 import tokenABI from './tokenABI.json'
+import { BN } from 'bn.js'
 
 const ABI = tokenABI
 
 const CONTRACT_ADDRESS =
   '0x0450c74da7186be1d066e3340218732bddedd1e86cd014baaa972e8ce4355ef4'
+
+const DECIMAL = BigNumber.from('1000000000000000000')
+const DECIMAL_USING_BNJS = new BN('1000000000000000000')
+const ZERO_MUL_DECIMAL_IN_BNJS = new BN(0).mul(DECIMAL_USING_BNJS)
 
 function App() {
   const [submitButtonIsLoading, setSubmitButtonIsLoading] = useState(false)
@@ -36,7 +41,6 @@ function App() {
   const [account, setAccount] = useState('')
   const [address, setAddress] = useState('')
   const [trimmedAddress, setTrimmedAddress] = useState('')
-  // const [provider, setProvider] = useState('')
   const [connected, setConnected] = useState(false)
 
   useEffect(() => {
@@ -76,8 +80,7 @@ function App() {
       const balanceAsHex = toHex(balance)
       const balanceAsString = hexToDecimalString(balanceAsHex)
       const balanceAsBigNumber = BigNumber.from(balanceAsString)
-      const decimalAsBigNumber = BigNumber.from('1000000000000000000')
-      const balanceAsInt = balanceAsBigNumber.div(decimalAsBigNumber).toNumber()
+      const balanceAsInt = balanceAsBigNumber.div(DECIMAL).toNumber()
       return balanceAsInt
     } catch (err) {
       console.error(err)
@@ -95,14 +98,12 @@ function App() {
         setConnected(true)
         const truncatedAddress = addressTruncator(starknet.account.address)
         setTrimmedAddress(truncatedAddress)
-        // setProvider(starknet.account.provider)
       } else {
         setAccount(starknet.account)
         setAddress(starknet.account.address)
         setConnected(true)
         const truncatedAddress = addressTruncator(starknet.account.address)
         setTrimmedAddress(truncatedAddress)
-        // setProvider(starknet.account.provider)
       }
     } catch (err) {
       alert(err.message)
@@ -138,11 +139,21 @@ function App() {
 
   const handleStartStream = async () => {
     setSubmitButtonIsLoading(true)
-    const res = await contract.start_stream(
-      receiverAddress,
-      [amountPerSecond, 0],
-      [receiverAmount, 0],
-    )
+    try {
+      const _amountPerSecond = new BN(amountPerSecond)
+      const _receiverAmount = new BN(receiverAmount)
+      const res = await contract.start_stream(
+        receiverAddress,
+        [_amountPerSecond.mul(DECIMAL_USING_BNJS), ZERO_MUL_DECIMAL_IN_BNJS],
+        [_receiverAmount.mul(DECIMAL_USING_BNJS), ZERO_MUL_DECIMAL_IN_BNJS],
+      )
+      console.log(res)
+      alert(res.transaction_hash)
+      setSubmitButtonIsLoading(false)
+    } catch (err) {
+      alert(err.message)
+      setSubmitButtonIsLoading(false)
+    }
   }
 
   return (
