@@ -7,3 +7,5 @@ Superfluid is a protocol that enables payment streaming without having to pay ga
 Demo: https://inspiring-nasturtium-b54e27.netlify.app/
 
 Contracts: https://github.com/StreamifyHQ/streamify
+
+Video Demo: https://youtu.be/TKDw3yCn_Uw
